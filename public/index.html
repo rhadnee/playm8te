@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Playm8te Arena</title>
+<style>
+  :root {
+    --navy: #14161f;
+    --panel: #1c1f2b;
+    --accent: #6c8cff;
+    --accent-dim: #3a4270;
+    --text: #e8e9f0;
+    --text-dim: #9498ab;
+    --light: #f0e6d2;
+    --dark: #4a5578;
+    --danger: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: var(--navy);
+    color: var(--text);
+    min-height: 100vh;
+  }
+  .screen { display: none; max-width: 480px; margin: 0 auto; padding: 24px 20px 60px; }
+  .screen.active { display: block; }
+  h1 { font-size: 1.6rem; margin: 8px 0 4px; }
+  h2 { font-size: 1.2rem; margin: 0 0 16px; color: var(--text); }
+  p.sub { color: var(--text-dim); margin: 0 0 24px; font-size: 0.95rem; }
+  .card {
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 16px;
+    border: 1px solid #2a2e40;
+  }
+  label { display: block; font-size: 0.85rem; color: var(--text-dim); margin: 14px 0 6px; }
+  input, select {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #2a2e40;
+    background: #12141c;
+    color: var(--text);
+    font-size: 1rem;
+  }
+  button {
+    width: 100%;
+    padding: 13px;
+    border-radius: 10px;
+    border: none;
+    background: var(--accent);
+    color: #0c0d13;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 18px;
+  }
+  button:active { opacity: 0.85; }
+  button.secondary { background: transparent; border: 1px solid var(--accent-dim); color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  .link { color: var(--accent); text-align: center; margin-top: 14px; font-size: 0.9rem; cursor: pointer; }
+  .error { color: var(--danger); font-size: 0.85rem; margin-top: 10px; min-height: 1em; }
+  .companion-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px; background: var(--panel); border-radius: 12px; margin-bottom: 10px;
+    border: 1px solid #2a2e40; cursor: pointer;
+  }
+  .companion-item .meta { color: var(--text-dim); font-size: 0.8rem; }
+  .pill {
+    display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem;
+    background: var(--accent-dim); color: var(--accent); margin-top: 4px;
+  }
+  #board {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid #2a2e40;
+    user-select: none;
+  }
+  .sq { display: flex; align-items: center; justify-content: center; font-size: min(7vw, 32px); cursor: pointer; position: relative; }
+  .sq.light { background: var(--light); }
+  .sq.dark { background: var(--dark); }
+  .sq.selected { outline: 3px solid var(--accent) inset; }
+  .sq.legal-target::after {
+    content: ""; position: absolute; width: 24%; height: 24%; border-radius: 50%;
+    background: rgba(108,140,255,0.55);
+  }
+  .status-bar { display: flex; justify-content: space-between; align-items: center; margin: 14px 0; font-size: 0.9rem; color: var(--text-dim); }
+  .status-bar .turn { color: var(--text); font-weight: 600; }
+  #chatLog { max-height: 160px; overflow-y: auto; margin: 12px 0; display: flex; flex-direction: column; gap: 8px; }
+  .msg { padding: 9px 12px; border-radius: 10px; font-size: 0.9rem; max-width: 85%; }
+  .msg.m8 { background: var(--accent-dim); align-self: flex-start; }
+  .msg.me { background: #2a2e40; align-self: flex-end; }
+  .chat-row { display: flex; gap: 8px; margin-top: 6px; }
+  .chat-row input { flex: 1; }
+  .chat-row button { width: auto; padding: 12px 16px; margin-top: 0; }
+  .result-badge { text-align: center; font-size: 1.4rem; font-weight: 700; margin: 16px 0 4px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .topbar .logout { color: var(--text-dim); font-size: 0.8rem; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="view-auth" class="screen active">
+  <h1>Playm8te</h1>
+  <p class="sub">Your AI gaming companion. Never game alone.</p>
+  <div class="card">
+    <h2 id="authTitle">Sign in</h2>
+    <div id="displayNameField" style="display:none">
+      <label>Display name</label>
+      <input id="displayName" placeholder="Alex" />
+    </div>
+    <label>Email</label>
+    <input id="email" type="email" placeholder="you@example.com" />
+    <label>Password</label>
+    <input id="password" type="password" placeholder="At least 8 characters" />
+    <button id="authSubmit" onclick="submitAuth()">Sign in</button>
+    <div class="error" id="authError"></div>
+    <div class="link" id="authToggle" onclick="toggleAuthMode()">New here? Create an account</div>
+  </div>
+</div>
+
+<div id="view-home" class="screen">
+  <div class="topbar">
+    <h1>Your M8s</h1>
+    <span class="logout" onclick="logout()">Log out</span>
+  </div>
+  <p class="sub">Pick a companion to play with, or create a new one.</p>
+  <div id="companionList"></div>
+  <button class="secondary" onclick="showCreateCompanion()">+ Create a new M8</button>
+</div>
+
+<div id="view-create" class="screen">
+  <h1>Create your M8</h1>
+  <p class="sub">Name it, give it a personality, and set how strong it plays.</p>
+  <div class="card">
+    <label>Name</label>
+    <input id="companionName" placeholder="Nova" />
+    <label>Personality</label>
+    <select id="companionPersonality">
+      <option value="coach">Coach — instructional, explains the why</option>
+      <option value="competitive">Competitive — intense, wants to win</option>
+      <option value="funny">Funny — playful, quick with a joke</option>
+      <option value="chill">Chill — relaxed, low-pressure</option>
+      <option value="strategic">Strategic — analytical, thinks ahead</option>
+      <option value="savage">Savage — blunt, teasing trash talk</option>
+      <option value="supportive">Supportive — warm, encouraging</option>
+    </select>
+    <label>Chess strength</label>
+    <select id="companionDifficulty">
+      <option value="BEGINNER">Beginner</option>
+      <option value="INTERMEDIATE" selected>Intermediate</option>
+      <option value="ADVANCED">Advanced</option>
+      <option value="EXPERT">Expert</option>
+    </select>
+    <button onclick="createCompanion()">Create M8</button>
+    <div class="error" id="createError"></div>
+  </div>
+  <div class="link" onclick="showScreen('home')">Cancel</div>
+</div>
+
+<div id="view-arena" class="screen">
+  <div class="topbar">
+    <h1 id="arenaTitle">Match</h1>
+    <span class="logout" onclick="showScreen('home')">Leave</span>
+  </div>
+  <div class="status-bar">
+    <span id="turnIndicator" class="turn">—</span>
+    <span id="phaseIndicator">—</span>
+  </div>
+  <div id="board"></div>
+  <div class="card">
+    <div id="chatLog"></div>
+    <div class="chat-row">
+      <input id="chatInput" placeholder="Ask M8 something..." onkeydown="if(event.key==='Enter')sendChat()" />
+      <button onclick="sendChat()">Send</button>
+    </div>
+  </div>
+</div>
+
+<div id="view-result" class="screen">
+  <h1>Match over</h1>
+  <div class="card">
+    <div class="result-badge" id="resultBadge">—</div>
+    <div id="resultDetail" class="sub" style="margin-bottom:0"></div>
+  </div>
+  <button onclick="rematch()">Rematch</button>
+  <button class="secondary" onclick="showScreen('home')">Back to M8s</button>
+</div>
+
+<script src="config.js"></script>
+<script>
+const API = window.PLAYM8TE_CONFIG?.API_URL || "";
+let state = {
+  accessToken: null, refreshToken: null, user: null,
+  authMode: "login",
+  companions: [],
+  currentCompanion: null,
+  matchId: null, myColor: null, ws: null,
+  selectedSquare: null, board: null,
+};
+
+function showScreen(name) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById("view-" + name).classList.add("active");
+}
+
+async function api(path, method, body) {
+  const headers = { "Content-Type": "application/json" };
+  if (state.accessToken) headers["Authorization"] = "Bearer " + state.accessToken;
+  const res = await fetch(API + path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.message || ("Request failed (" + res.status + ")"));
+  return data;
+}
+
+function toggleAuthMode() {
+  state.authMode = state.authMode === "login" ? "register" : "login";
+  document.getElementById("authTitle").textContent = state.authMode === "login" ? "Sign in" : "Create your account";
+  document.getElementById("authSubmit").textContent = state.authMode === "login" ? "Sign in" : "Create account";
+  document.getElementById("displayNameField").style.display = state.authMode === "register" ? "block" : "none";
+  document.getElementById("authToggle").textContent = state.authMode === "login" ? "New here? Create an account" : "Already have an account? Sign in";
+  document.getElementById("authError").textContent = "";
+}
+
+async function submitAuth() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value;
+  const errEl = document.getElementById("authError");
+  errEl.textContent = "";
+  try {
+    let result;
+    if (state.authMode === "register") {
+      const displayName = document.getElementById("displayName").value.trim() || "Player";
+      result = await api("/api/auth/register", "POST", { email, password, displayName });
+    } else {
+      result = await api("/api/auth/login", "POST", { email, password });
+    }
+    state.accessToken = result.accessToken;
+    state.refreshToken = result.refreshToken;
+    state.user = result.user;
+    await loadCompanions();
+    showScreen("home");
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+function logout() {
+  state.accessToken = null; state.refreshToken = null; state.user = null;
+  if (state.ws) state.ws.close();
+  showScreen("auth");
+}
+
+async function loadCompanions() {
+  state.companions = await api("/api/companions", "GET");
+  const list = document.getElementById("companionList");
+  list.innerHTML = "";
+  if (state.companions.length === 0) {
+    list.innerHTML = '<p class="sub">You don\'t have an M8 yet.</p>';
+    return;
+  }
+  for (const c of state.companions) {
+    const div = document.createElement("div");
+    div.className = "companion-item";
+    div.onclick = () => startMatch(c);
+    div.innerHTML = `<div><div><strong>${escapeHtml(c.name)}</strong></div>
+      <div class="meta">${escapeHtml(c.personality_id)} · ${escapeHtml(c.chess_difficulty)}</div></div>
+      <span class="pill">Play ▸</span>`;
+    list.appendChild(div);
+  }
+}
+
+function showCreateCompanion() {
+  document.getElementById("createError").textContent = "";
+  showScreen("create");
+}
+
+async function createCompanion() {
+  const errEl = document.getElementById("createError");
+  try {
+    const body = {
+      name: document.getElementById("companionName").value.trim() || "M8",
+      avatarKey: "default",
+      personalityId: document.getElementById("companionPersonality").value,
+      chessDifficulty: document.getElementById("companionDifficulty").value,
+    };
+    await api("/api/companions", "POST", body);
+    await loadCompanions();
+    showScreen("home");
+  } catch (e) {
+    errEl.textContent = e.message;
+  }
+}
+
+async function startMatch(companion) {
+  state.currentCompanion = companion;
+  document.getElementById("chatLog").innerHTML = "";
+  const match = await api("/api/matches", "POST", { companionId: companion.id });
+  state.matchId = match.matchId;
+  state.myColor = match.players.find(p => p.kind === "human").color;
+  document.getElementById("arenaTitle").textContent = "vs " + companion.name;
+  showScreen("arena");
+  renderState(match);
+  connectWs(match.matchId);
+}
+
+function connectWs(matchId) {
+  if (state.ws) state.ws.close();
+  const wsBase = window.PLAYM8TE_CONFIG?.WS_URL || `${(location.protocol === "https:" ? "wss:" : "ws:")}//${location.host}`;
+  const ws = new WebSocket(`${wsBase}/ws?matchId=${matchId}&token=${state.accessToken}`);
+  ws.onmessage = (evt) => {
+    const msg = JSON.parse(evt.data);
+    if (msg.type === "state_update") {
+      renderState(msg.state);
+    } else if (msg.type === "companion_message") {
+      appendChat("m8", msg.message);
+    }
+  };
+  state.ws = ws;
+}
+
+function renderState(gameState) {
+  // Guard against out-of-order delivery: the server sends a WS broadcast
+  // after the human's move, another WS broadcast after the AI's auto-move,
+  // and the HTTP response for the original request — these travel over
+  // different connections and can arrive in a different order than they
+  // were sent. Without this guard, a late-arriving stale broadcast can
+  // silently overwrite an already-correct, more recent render.
+  if (state.board && gameState.moveNumber < state.board.moveNumber) {
+    return;
+  }
+  state.board = gameState;
+  state.selectedSquare = null;
+  drawBoard(gameState.board.fen, gameState.availableActions || []);
+  const turnIsMe = gameState.turnPlayerId && gameState.players.find(p => p.id === gameState.turnPlayerId)?.kind === "human";
+  document.getElementById("turnIndicator").textContent = gameState.currentPhase === "COMPLETE" ? "Game over" : (turnIsMe ? "Your move" : "M8 is thinking...");
+  document.getElementById("phaseIndicator").textContent = gameState.currentPhase;
+  if (gameState.currentPhase === "COMPLETE") {
+    setTimeout(() => showResult(gameState), 900);
+  }
+}
+
+const PIECE_GLYPH = { p: "♟", n: "♞", b: "♝", r: "♜", q: "♛", k: "♚" };
+
+function drawBoard(fen, availableActions) {
+  const boardEl = document.getElementById("board");
+  boardEl.innerHTML = "";
+  const rows = fen.split(" ")[0].split("/");
+  const files = "abcdefgh";
+  // If playing black, flip the board so the player's pieces are at the bottom.
+  const flip = state.myColor === "black";
+  const rankOrder = flip ? [...rows].reverse() : rows;
+
+  for (let r = 0; r < 8; r++) {
+    const rank = 8 - r;
+    const rowSquares = expandFenRow(rankOrder[r]);
+    const fileOrder = flip ? [...rowSquares].reverse() : rowSquares;
+    const displayRank = flip ? r + 1 : 8 - r;
+    for (let f = 0; f < 8; f++) {
+      const file = flip ? files[7 - f] : files[f];
+      const squareName = file + displayRank;
+      const piece = fileOrder[f];
+      const sq = document.createElement("div");
+      const isLight = (files.indexOf(file) + displayRank) % 2 === 1;
+      sq.className = "sq " + (isLight ? "light" : "dark");
+      if (piece) {
+        const glyph = PIECE_GLYPH[piece.toLowerCase()] || "";
+        sq.textContent = glyph;
+        sq.style.color = piece === piece.toUpperCase() ? "#f5f5f5" : "#151515";
+        sq.style.textShadow = piece === piece.toUpperCase() ? "0 0 2px #000" : "none";
+      }
+      sq.dataset.square = squareName;
+      sq.onclick = () => onSquareClick(squareName, availableActions);
+      if (state.selectedSquare === squareName) sq.classList.add("selected");
+      if (state.selectedSquare && availableActions.some(a => a.from === state.selectedSquare && a.to === squareName)) {
+        sq.classList.add("legal-target");
+      }
+      boardEl.appendChild(sq);
+    }
+  }
+}
+
+function expandFenRow(row) {
+  const out = [];
+  for (const ch of row) {
+    if (/\d/.test(ch)) { for (let i = 0; i < Number(ch); i++) out.push(null); }
+    else out.push(ch);
+  }
+  return out;
+}
+
+async function onSquareClick(square, availableActions) {
+  if (!state.board || state.board.currentPhase === "COMPLETE") return;
+  const turnIsMe = state.board.turnPlayerId && state.board.players.find(p => p.id === state.board.turnPlayerId)?.kind === "human";
+  if (!turnIsMe) return;
+
+  if (state.selectedSquare && availableActions.some(a => a.from === state.selectedSquare && a.to === square)) {
+    const from = state.selectedSquare;
+    state.selectedSquare = null;
+    try {
+      const result = await api(`/api/matches/${state.matchId}/moves`, "POST", { from, to: square });
+      renderState(result.state);
+    } catch (e) {
+      appendChat("m8", "(move failed: " + e.message + ")");
+    }
+    return;
+  }
+
+  const hasMovesFromHere = availableActions.some(a => a.from === square);
+  state.selectedSquare = hasMovesFromHere ? square : null;
+  drawBoard(state.board.board.fen, availableActions);
+}
+
+function appendChat(who, text) {
+  const log = document.getElementById("chatLog");
+  const div = document.createElement("div");
+  div.className = "msg " + (who === "m8" ? "m8" : "me");
+  div.textContent = text;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+
+function sendChat() {
+  const input = document.getElementById("chatInput");
+  const text = input.value.trim();
+  if (!text || !state.ws) return;
+  appendChat("me", text);
+  state.ws.send(JSON.stringify({ type: "player_chat", text }));
+  input.value = "";
+}
+
+function showResult(gameState) {
+  const badge = document.getElementById("resultBadge");
+  const detail = document.getElementById("resultDetail");
+  const iWon = gameState.recentEvents.some(e => e.type === "PLAYER_WON" && gameState.players.find(p => p.id === e.actorPlayerId)?.kind === "human");
+  const isDraw = gameState.recentEvents.some(e => e.type === "MATCH_DRAWN");
+  if (isDraw) { badge.textContent = "Draw"; badge.style.color = "var(--text-dim)"; }
+  else if (iWon) { badge.textContent = "You won! 🎉"; badge.style.color = "#7ee787"; }
+  else { badge.textContent = "M8 won this one"; badge.style.color = "var(--danger)"; }
+  detail.textContent = gameState.moveNumber + " half-moves played.";
+  showScreen("result");
+}
+
+function rematch() {
+  if (state.currentCompanion) startMatch(state.currentCompanion);
+}
+
+function escapeHtml(s) {
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# Netlify configuration for the Playm8te Arena frontend (public/).
+#
+# This file is the fix for the "Page not found" issue: without it, Netlify
+# has no way to know the actual frontend (public/index.html) lives in a
+# subdirectory rather than the repo root, and no way to know it should run
+# the config-generation step instead of (or in addition to) the backend's
+# own "npm run build" (which produces dist/ — compiled backend code, not a
+# browser-servable site).
+
+[build]
+  # Writes public/config.js from the API_URL / WS_URL environment variables
+  # set in the Netlify dashboard (Site settings → Environment variables).
+  # Does NOT run the backend's "npm run build" (tsc) — that produces
+  # dist/index.js, a Node server entry point, which is not a frontend
+  # asset and must never be what gets published here.
+  command = "node scripts/generate-frontend-config.js"
+  publish = "public"
+
+# Required environment variables (set in Netlify's dashboard, not here):
+#   API_URL — e.g. https://api.playm8te.com  (your backend's HTTPS URL)
+#   WS_URL  — e.g. wss://api.playm8te.com    (your backend's WSS URL, same host, wss:// scheme)
+# If unset, config.js defaults both to "" (same-origin), which only works
+# if the frontend and backend somehow share an origin — not the case for a
+# Netlify + separate-backend-host deployment, so these should always be set
+# in a real deployment.
+
+# No SPA fallback / redirect rules are needed: this is a single static
+# index.html with no client-side router and no other pages, so there's
+# nothing to redirect to it from.
