@@ -42,7 +42,7 @@
 
 **Stockfish** — A child process spawned per engine call (move selection, position analysis) via `child_process.spawn`, communicating over UCI via stdin/stdout. Not a server, not persistent — the backend process must simply have the `stockfish` binary available on its filesystem (see `STOCKFISH_PATH`). If unavailable, the app degrades (random-legal-move fallback for gameplay, `engineAvailable: false` for analysis) rather than crashing — see `docs/DEPLOYMENT.md` for per-provider install instructions.
 
-**Anthropic API** — Used for companion conversation generation (personality-flavored reactions and chat responses). If `ANTHROPIC_API_KEY` is unset, the app runs against a deterministic fallback provider (generic placeholder lines) rather than failing — useful for environments where the key isn't configured yet, but not a substitute for a real key in production.
+**Anthropic API** — Used for companion conversation generation (personality-flavored reactions and chat responses). If `ANTHROPIC_API_KEY` is unset, the app runs against a deterministic fallback provider (generic placeholder lines). This keeps the MVP deployable without API spend; add the key later to enable real Anthropic-powered conversation.
 
 ## Why this split (not everything on Netlify)
 

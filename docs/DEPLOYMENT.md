@@ -66,7 +66,7 @@ client-side router.
 | `PORT` | No (defaults to 3000) | Most hosts inject this automatically. |
 | `DATABASE_URL` | Yes | Managed Postgres connection string. Append `?sslmode=require` if your provider requires it. |
 | `FRONTEND_URL` | Yes | Your exact Netlify origin, e.g. `https://playm8te.netlify.app`. Used for CORS and WebSocket origin validation. |
-| `ANTHROPIC_API_KEY` | Yes | Without it the app still runs, but companion replies are generic placeholders, not real personality-driven conversation. |
+| `ANTHROPIC_API_KEY` | No | If omitted, the app uses the deterministic fallback provider; add the key later to enable real Anthropic-powered conversation. |
 | `AI_MODEL` | No | Defaults to `claude-sonnet-4-6`. |
 | `STOCKFISH_PATH` | No (defaults to `/usr/games/stockfish`) | See Stockfish section below — set this if your provider installs it elsewhere. |
 | `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET` | Yes | The app **refuses to start** in production with the built-in dev-fallback values. Generate with: `node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"` (run twice, once per secret). |
@@ -163,7 +163,7 @@ To repeat this yourself before a real deploy:
 ```bash
 npm run build
 npm run migrate   # against your target DATABASE_URL
-NODE_ENV=production DATABASE_URL=... FRONTEND_URL=... ANTHROPIC_API_KEY=... \
+NODE_ENV=production DATABASE_URL=... FRONTEND_URL=... \
   JWT_ACCESS_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))") \
   JWT_REFRESH_SECRET=$(node -e "console.log(require('crypto').randomBytes(48).toString('hex'))") \
   npm start

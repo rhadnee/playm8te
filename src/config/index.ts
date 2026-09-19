@@ -51,7 +51,6 @@ export const config = {
 export function assertProductionConfig(): void {
   if (config.nodeEnv === "production") {
     required("DATABASE_URL");
-    required("ANTHROPIC_API_KEY");
     required("FRONTEND_URL");
     const access = required("JWT_ACCESS_SECRET");
     const refresh = required("JWT_REFRESH_SECRET");

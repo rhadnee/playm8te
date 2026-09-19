@@ -67,6 +67,18 @@ describe("config.assertProductionConfig", () => {
     expect(() => assertProductionConfig()).toThrow();
   });
 
+  it("allows production startup without Anthropic when other required config is present", async () => {
+    const { assertProductionConfig } = await loadConfigWithEnv({
+      NODE_ENV: "production",
+      DATABASE_URL: "postgres://real",
+      ANTHROPIC_API_KEY: undefined,
+      FRONTEND_URL: "https://real-frontend.example.com",
+      JWT_ACCESS_SECRET: "a-real-access-secret",
+      JWT_REFRESH_SECRET: "a-real-refresh-secret",
+    });
+    expect(() => assertProductionConfig()).not.toThrow();
+  });
+
   it("requires FRONTEND_URL in production", async () => {
     const { assertProductionConfig } = await loadConfigWithEnv({
       NODE_ENV: "production",
